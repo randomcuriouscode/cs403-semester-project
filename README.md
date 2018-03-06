@@ -8,7 +8,7 @@ Its a bot that follows!
 - A C++.sublime-settings file is included for sublime text users.
 
 ## Building:
-1. make
+1. ```make```
 
 ## Running:
 1. Note the name of your project root directory. If cloned from GIT without renaming,
