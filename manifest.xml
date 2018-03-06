@@ -1,0 +1,17 @@
+<package>
+  <version>0.0.0</version>
+  <description brief="group-project">
+    Followbot.
+    Tony Gao, David Boslee, Cuong Luong, Wyatt Liao's group project for CS403.
+  </description>
+  <author>Tony Gao</author>
+  <license>Apache-2.0</license>
+  <review status="unreviewed" notes=""/>
+  <versioncontrol type="git" url="https://github.com/rpg711/cs403-semester-project" />
+  <url></url>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
+
+</package>
