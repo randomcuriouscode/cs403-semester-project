@@ -8,18 +8,50 @@
 */
 
 using namespace std;
-using geometry_msgs::Point32;
 
 namespace followlib 
 {
   // all code goes here
+  class KinectMapper
+  {
 
-  void trans_p(Point32 &p_o, Eigen::Vector3f &p_trans);
-  void trans_pc(vector<Point32> &points, vector<Point32> &points_translated);
+  private:
+    void pReadRigidTransform(string path);
+    Eigen::Matrix3f p_R;
+    Eigen::Vector3f p_T;
+
+  public:
+    const Eigen::Matrix3f& R() { return p_R; }
+    const Eigen::Vector3f& T() { return p_T; }
+
+  public:
 
   /*
-    A trivial test function, remove when stuff is implemented here.
-    Purpose is to test library linking into main executable.
+    @param configpath path to the configuration file relative
+            to binary location
   */
-  void trivial_test();
+  KinectMapper(string configpath)
+  {
+    pReadRigidTransform(configpath);
+  }
+
+  KinectMapper (const KinectMapper&) = delete;
+  KinectMapper& operator= (const KinectMapper&) = delete;
+  
+  /*
+    @brief Translate point (in kinect reference frame) to robot reference frame
+    @param[in] p_o The input point
+    @param[out] p_trans The output point
+  */
+  void trans_p(const geometry_msgs::Point32 &p_o, Eigen::Vector3f &p_trans);
+
+  /*
+    @brief Translate input points (in kinect reference frame) to robot reference frame
+    @param[in] points The input points
+    @param[out] points_translated The output points
+  */
+  void trans_pc(vector<geometry_msgs::Point32> &points, vector<Eigen::Vector3f> &points_translated);
+
+
+  };
 }
