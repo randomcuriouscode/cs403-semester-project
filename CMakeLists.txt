@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 2.8.11)
 
+##########################################################################
+### Third party libraries
+##########################################################################
+
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /usr/local/lib/)
 set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} /usr/local/include)
 

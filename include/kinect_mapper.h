@@ -14,7 +14,7 @@ namespace followlib
   // all code goes here
   class KinectMapper
   {
-
+    
   private:
     void pReadRigidTransform(string path);
     Eigen::Matrix3f p_R;
@@ -51,7 +51,6 @@ namespace followlib
     @param[out] points_translated The output points
   */
   void trans_pc(vector<geometry_msgs::Point32> &points, vector<Eigen::Vector3f> &points_translated);
-
 
   };
 }
