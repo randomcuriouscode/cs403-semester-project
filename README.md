@@ -7,6 +7,10 @@ Its a bot that follows!
 - Project uses a default tab size of 2 spaces.
 - A C++.sublime-settings file is included for sublime text users.
 
+## Installing dependencies:
+1. Ensure you have a github SSH key setup.
+2. ```./configure```
+
 ## Building:
 1. ```make```
 
@@ -20,4 +24,4 @@ Its a bot that follows!
 1. ```make test```
 
 ## Cleanup:
-1. ```rosmake --target=clean```
+1. ```make clean```

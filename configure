@@ -1,0 +1,6 @@
+git submodule update --init
+mkdir -p 3rd-party-libs/yaml-cpp/build/
+cd 3rd-party-libs/yaml-cpp/build
+cmake ..
+make -j4
+sudo make install

@@ -13,9 +13,8 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "followbot");
   ros::NodeHandle n;
 
-  cout << "Hello World!" << endl;
+  cout << "Spinning..." << endl;
 
-  followlib::trivial_test();
   // stuff goes here
 
   ros::spin();

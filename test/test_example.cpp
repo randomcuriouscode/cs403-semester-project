@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <kinect_mapper.h>
 
 #define GTEST
 
@@ -10,7 +9,6 @@ TEST(TestSuite, test_trivialtest)
   ASSERT_FALSE(false);
   ASSERT_NE(1,0);
   ASSERT_LE(0,1);
-  followlib::trivial_test(); // test for proper library linking
 }
 
 int main(int argc, char **argv)

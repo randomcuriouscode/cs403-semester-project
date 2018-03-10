@@ -1,0 +1,3 @@
+[submodule "3rd-party-libs/yaml-cpp"]
+	path = 3rd-party-libs/yaml-cpp
+	url = git@github.com:rpg711/yaml-cpp.git
