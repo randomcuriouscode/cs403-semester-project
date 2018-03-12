@@ -1,3 +1,6 @@
 [submodule "3rd-party-libs/yaml-cpp"]
 	path = 3rd-party-libs/yaml-cpp
 	url = git@github.com:rpg711/yaml-cpp.git
+[submodule "3rd-party-libs/peopleTracker"]
+	path = 3rd-party-libs/peopleTracker
+	url = git@github.com:arpesenti/peopleTracker.git
