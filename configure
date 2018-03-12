@@ -1,6 +1,57 @@
 git submodule update --init
+
+echo 'Installing yaml-cpp...'
+# yamlcpp
 mkdir -p 3rd-party-libs/yaml-cpp/build/
 cd 3rd-party-libs/yaml-cpp/build
 cmake ..
 make -j4
 sudo make install
+cd -
+
+# From: https://www.reddit.com/r/ROS/comments/6qejy0/openni_kinect_installation_on_kinetic_indigo/
+# OpenNI
+echo 'Installing OpenNI...'
+
+# OpenNI dependencies
+sudo apt-get -y install g++ python libusb-1.0-0-dev freeglut3-dev
+sudo apt-get -y -o Dpkg::Options::="--force-overwrite" install openjdk-9-jdk
+sudo apt-get -y install doxygen graphviz mono-complete
+
+cd 3rd-party-libs/OpenNI/
+git fetch
+git checkout Unstable-1.5.4.0
+
+cd 3rd-party-libs/OpenNI/Platform/Linux/CreateRedist
+sh RedistMaker
+cd -
+
+# OpenNI build and install
+cd 3rd-party-libs/OpenNI/Platform/Linux/Redist/OpenNI-Bin-Dev-Linux*
+sudo sh install.sh
+cd -
+
+# SensorKinect OpenNI addon
+cd 3rd-party-libs/SensorKinect/Platform/Linux/CreateRedist
+sh RedistMaker
+cd -
+
+cd 3rd-party-libs/SensorKinect/Platform/Linux/Redist/Sensor-Bin*
+sudo sh install.sh
+cd -
+
+# Ros Kinetic OpenNI
+sudo apt-get -y install ros-kinetic-openni*
+
+# NITE
+cd NITE-Bin-Dev-Linux*
+sudo sh install.sh
+cd -
+
+# Add L-Cas repo to apt
+curl -s http://lcas.lincoln.ac.uk/repos/public.key | sudo apt-key add -
+sudo apt-add-repository http://lcas.lincoln.ac.uk/ubuntu/main
+sudo apt-get update
+
+# Install spencer people tracking ros package
+sudo apt-get -y install ros-kinetic-spencer-people-tracking-full
