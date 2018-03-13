@@ -1,3 +1,9 @@
+# Only run configure on debian/ubuntu.
+if [ ! "$(grep -Ei 'debian|buntu' /etc/*release)" ]; then
+   echo "Configure script only supports debian-based distributions."
+   exit 1
+fi
+
 git submodule update --init
 
 echo 'Installing yaml-cpp...'
@@ -21,6 +27,7 @@ sudo apt-get -y install doxygen graphviz mono-complete
 cd 3rd-party-libs/OpenNI/
 git fetch
 git checkout Unstable-1.5.4.0
+cd -
 
 cd 3rd-party-libs/OpenNI/Platform/Linux/CreateRedist
 sh RedistMaker
@@ -28,6 +35,7 @@ cd -
 
 # OpenNI build and install
 cd 3rd-party-libs/OpenNI/Platform/Linux/Redist/OpenNI-Bin-Dev-Linux*
+sudo sh install.sh -u # always uninstall before installing so environment is preserved
 sudo sh install.sh
 cd -
 
@@ -37,6 +45,7 @@ sh RedistMaker
 cd -
 
 cd 3rd-party-libs/SensorKinect/Platform/Linux/Redist/Sensor-Bin*
+sudo sh install.sh -u
 sudo sh install.sh
 cd -
 
@@ -45,13 +54,16 @@ sudo apt-get -y install ros-kinetic-openni*
 
 # NITE
 cd NITE-Bin-Dev-Linux*
+sudo sh uninstall.sh
 sudo sh install.sh
 cd -
 
 # Add L-Cas repo to apt
-curl -s http://lcas.lincoln.ac.uk/repos/public.key | sudo apt-key add -
-sudo apt-add-repository http://lcas.lincoln.ac.uk/ubuntu/main
-sudo apt-get update
+if ! grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/* | grep -q lcas.lincoln.ac.uk; then
+	curl -s http://lcas.lincoln.ac.uk/repos/public.key | sudo apt-key add -
+	sudo apt-add-repository http://lcas.lincoln.ac.uk/ubuntu/main
+	sudo apt-get update
+fi # only add if not already in apt sources list
 
 # Install spencer people tracking ros package
 sudo apt-get -y install ros-kinetic-spencer-people-tracking-full
