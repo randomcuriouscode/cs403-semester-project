@@ -1,9 +1,12 @@
 [submodule "3rd-party-libs/yaml-cpp"]
 	path = 3rd-party-libs/yaml-cpp
 	url = git@github.com:rpg711/yaml-cpp.git
+	ignore = dirty
 [submodule "3rd-party-libs/OpenNI"]
 	path = 3rd-party-libs/OpenNI
 	url = git@github.com:OpenNI/OpenNI.git
+	ignore = dirty
 [submodule "3rd-party-libs/SensorKinect"]
 	path = 3rd-party-libs/SensorKinect
 	url = https://github.com/avin2/SensorKinect
+	ignore = dirty
