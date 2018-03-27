@@ -50,7 +50,7 @@ sudo sh install.sh
 cd -
 
 # Ros Kinetic OpenNI
-sudo apt-get -y install ros-kinetic-openni*
+sudo apt-get -y install ros-kinetic-openni-*
 
 # NITE
 cd NITE-Bin-Dev-Linux*
