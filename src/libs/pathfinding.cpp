@@ -24,7 +24,7 @@ void followlib::PathFinding::moveGoal(){
   ros::Rate loop_rate(10);
 
   do{
-    vel_msg.linear.x = 1.5*getDistance(initLocation.x,initLocation.y,finalLocation.x,finalLocation.y);
+    vel_msg.linear.x = 0.2*getDistance(initLocation.x,initLocation.y,finalLocation.x,finalLocation.y);
     vel_msg.linear.y = 0;
     vel_msg.linear.z = 0;
 
