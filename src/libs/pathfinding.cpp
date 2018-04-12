@@ -4,7 +4,7 @@ followlib::PathFinding::PathFinding(turtlesim::Pose goal, double d, ros::NodeHan
   finalLocation = goal;
   nh = n;
   distance_tolerance = d;
-  cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/turtle1/command_velocity, 10,this);
+  cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10,this);
   pose_sub = n.subscribe("/turtle1/pose", 1000, &PathFinding::poseCallBack,this);
 
 }
