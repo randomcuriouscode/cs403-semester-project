@@ -4,7 +4,7 @@ followlib::PathFinding::PathFinding(turtlesim::Pose goal, double d, ros::NodeHan
   finalLocation = goal;
   nh = n;
   distance_tolerance = d;
-  cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/turtle1/command_velocity, 1);
+  cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/turtle1/command_velocity, 10,this);
   pose_sub = n.subscribe("/turtle1/pose", 1000, &PathFinding::poseCallBack,this);
 
 }
@@ -37,7 +37,7 @@ void followlib::PathFinding::moveGoal(){
     ros::spinOnce();
     loop_rate.sleep();
   }
-  while(getDistance(initLocation.x,initLocation.y,finalLocation.x,finalLocation.y) > distance_tolerance);
+  while(getDistance(initLocation.x,initLocation.y,finalLocation.x,finalLocation.y) >= distance_tolerance);
 
   vel_msg.linear.x = 0;
   vel_msg.angular.z = 0;
