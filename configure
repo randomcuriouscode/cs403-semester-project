@@ -67,3 +67,6 @@ fi # only add if not already in apt sources list
 
 # Install spencer people tracking ros package
 sudo apt-get -y install ros-kinetic-spencer-people-tracking-full
+
+# Fix the broken people tracking launch file.........
+yes | sudo cp -f mods/tracking_single_rgbd_sensor.launch /opt/ros/kinetic/share/spencer_people_tracking_launch/launch/
