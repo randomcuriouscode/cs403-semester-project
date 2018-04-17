@@ -18,7 +18,7 @@
   All names declared in the namespace must be unique.
 */
 
-using PTCallback = std::function<void(Eigen::Vector2f)>;
+using PTCallback = std::function<void(Eigen::Vector2d)>;
 const std::string PTRACK_TOPICNAME = "/spencer/perception/tracked_persons";
 
 namespace followlib
@@ -26,8 +26,6 @@ namespace followlib
   class PeopleTracker
   {
   public:
-    void p_SubCb(const spencer_tracking_msgs::TrackedPersons::ConstPtr &msg);
-
     /**
     * @brief Create a PeopleTracker with callback for tracked person coordinates
     * @param n: node handle of core app
@@ -38,7 +36,7 @@ namespace followlib
     PeopleTracker (const PeopleTracker&) = delete;
     PeopleTracker& operator= (const PeopleTracker&) = delete;
   private:
-
+    void p_SubCb(const spencer_tracking_msgs::TrackedPersons::ConstPtr &msg);
   private:
     const ros::NodeHandle &p_rosnode;
     const PTCallback &p_cb;
