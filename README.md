@@ -19,9 +19,13 @@ Its a bot that follows!
    it will be $ROOT_DIR = cs403-semester-project. This is the package name.
 2. Replace $ROOT_DIR with the name of your root directory.
 	```rosrun $ROOT_DIR followbot```
+3. Run the spencer library.
+	```./launch_spencer.bash```
 
 ## Run tests:
 1. ```make test```
+
+* PeopleTracker tests will fail unless spencer is running, and a person is being tracked by spencer.
 
 ## Cleanup:
 1. ```make clean```
