@@ -7,7 +7,7 @@
   Static general helper functions go here.
 */
 
-namespace util 
+namespace util
 {
   /*
     @brief Constrain an angle between -pi, pi
@@ -28,4 +28,11 @@ namespace util
     return x;
   }
 
+  /*
+    @brief normalizes a vector (sqrt of dot product with itself)
+    @param vector coords
+  */
+  static float norm(float x, float y, float z){
+    return sqrt(x*x + y*y + z*z);
+  }
 }
