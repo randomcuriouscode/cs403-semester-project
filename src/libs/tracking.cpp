@@ -1,13 +1,11 @@
 #include "tracking.h"
+#include <ros/transport_hints.h>
 
+using namespace followlib;
 
-namespace followlib
-{
-
-PeopleTracker::PeopleTracker(const ros::NodeHandle &n, const PTCallback &cb):
+PeopleTracker::PeopleTracker(ros::NodeHandle &n, const PTCallback &cb):
     p_rosnode(n), p_cb(cb) {
-  p_ptSub = n.subscribe("spencer/perception/tracked_persons", 
-    1000, &PeopleTracker::p_SubCb, this);
+  p_ptSub = n.subscribe(PTRACK_TOPICNAME, 1000, &PeopleTracker::p_SubCb, this);
 }
 
 void PeopleTracker::p_SubCb(const spencer_tracking_msgs::TrackedPersons::ConstPtr &msg)
@@ -19,6 +17,4 @@ void PeopleTracker::p_SubCb(const spencer_tracking_msgs::TrackedPersons::ConstPt
     Eigen::Vector2f v (p.x, p.y);
     p_cb(v);
   }
-}
-
 }
