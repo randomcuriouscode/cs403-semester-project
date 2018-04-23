@@ -13,5 +13,6 @@
   <depend package="sensor_msgs"/>
   <depend package="roscpp"/>
   <depend package="rospy"/>
+  <depend package="cobot_msgs"/>
 
 </package>
