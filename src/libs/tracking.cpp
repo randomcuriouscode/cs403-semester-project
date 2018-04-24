@@ -17,9 +17,17 @@ void PeopleTracker::p_SubCb(const spencer_tracking_msgs::TrackedPersons::ConstPt
   {
     const geometry_msgs::Point &p = m.tracks[0].pose.pose.position;
     Eigen::Vector2d v (p.x, p.y);
+    p_lastReading = Eigen::Vector2d(v);
     ROS_DEBUG_STREAM_NAMED(LOGGER_NAME, 
       "PeopleTracker::p_SubCb: Calling cb (" << 
       v.x() << "," << v.y() << ")");
     p_cb(v);
+  }
+  else if (p_lastReading.x() != 0. && p_lastReading.y() != 0.)
+  {
+    ROS_DEBUG_STREAM_NAMED(LOGGER_NAME, 
+      "PeopleTracker::p_SubCb: Calling cb (" << 
+      p_lastReading.x() << "," << p_lastReading.y() << ") (Default to previous track)");
+    p_cb(p_lastReading);
   }
 }
