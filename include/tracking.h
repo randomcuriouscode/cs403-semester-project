@@ -41,5 +41,6 @@ namespace followlib
     const ros::NodeHandle &p_rosnode;
     const PTCallback &p_cb;
     ros::Subscriber p_ptSub;
+    Eigen::Vector2d p_lastReading;
   };
 }
