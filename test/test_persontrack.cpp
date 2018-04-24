@@ -29,10 +29,11 @@ TEST(TestSuite, test_PTrack)
   PeopleTracker pt(*handle, cb);
 
   auto start = std::chrono::steady_clock::now();
-
-  while (std::chrono::steady_clock::now() < start + chrono::seconds(10))
+  auto cur_time = std::chrono::steady_clock::now();
+  while (cur_time < start + chrono::seconds(10))
   {
-    ros::spin();
+    ros::spinOnce();
+    cur_time = std::chrono::steady_clock::now();
   } 
 
   ASSERT_TRUE(callback_called);
