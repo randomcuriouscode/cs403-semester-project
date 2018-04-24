@@ -15,8 +15,8 @@ const string LOGGER_NAME = "FollowCore";
 
 void PTrackCallback(Eigen::Vector2d pt)
 {
-  ROS_DEBUG_STREAM_NAMED(LOGGER_NAME, 
-      "PTrackCallback: Got (" << 
+  ROS_DEBUG_STREAM_NAMED(LOGGER_NAME,
+      "PTrackCallback: Got (" <<
       pt.x() << "," << pt.y() << ")");
 }
 
@@ -34,8 +34,13 @@ int main(int argc, char **argv) {
   cout << "Spinning..." << endl;
 
   // stuff goes here
+  geometry_msgs::Pose dest;
+  dest.position.x = 1;
+  dest.position.y = 1;
+  dest.position.z = 0;
   PeopleTracker pt(n, &PTrackCallback);
-
+  PathFinding pf = PathFinding(n, dest); //cobot will spin in circles (which makes sense because goal isn't updated periodically)
+  pf.driveGoal();
   ros::spin();
 
   return(0);
