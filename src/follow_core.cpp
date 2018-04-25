@@ -34,14 +34,17 @@ int main(int argc, char **argv) {
   cout << "Spinning..." << endl;
 
   // stuff goes here
-  geometry_msgs::Pose dest;
-  dest.position.x = 1;
-  dest.position.y = 0;
-  dest.position.z = 0;
-  PeopleTracker pt(n, &PTrackCallback);
-  PathFinding pf = PathFinding(n, dest); //cobot will spin in circles (which makes sense because goal isn't updated periodically)
-  pf.driveGoal();
-  ros::spin();
+  while(1==1){
+    geometry_msgs::Pose dest;
+    //position acquired from tracking
+    dest.position.x = 1;
+    dest.position.y = 0;
+    dest.position.z = 0;
+    PeopleTracker pt(n, &PTrackCallback);
+    PathFinding pf = PathFinding(n); //cobot will spin in circles (which makes sense because goal isn't updated periodically)
+    pf.driveTo(dest);
+    ros::spin();
+  }
 
   return(0);
 }

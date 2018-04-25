@@ -17,9 +17,11 @@
 
 //cobot move2goal implementation
 //Constants
-const std::string POSE_TOPIC = "/turtle1/pose";
+//const std::string POSE_TOPIC = "/turtle1/pose";
 const std::string LASER_SCAN_TOPIC = "/Cobot/Laser";
+//const std::string LASER_SCAN_TOPIC = "/COMPSCI403/LaserScan";
 const std::string CMD_VEL_TOPIC = "/Cobot/Drive";
+//const std::string CMD_VEL_TOPIC = "/cmd_vel_mux/input/navi";
 const float DISTANCE_EPS = .01; //epsilon for distance
 const float LIN_CONS = 1.5; // linear vel constant
 const float ANG_CONS = 6; //angular vel constant
@@ -37,20 +39,19 @@ namespace followlib
   class PathFinding
   {
   public:
-    PathFinding(ros::NodeHandle &_n, geometry_msgs::Pose _goal);
+    PathFinding(ros::NodeHandle &_n);
     float get_linear_vel(float dist);
-    float get_angular_vel();
+    float get_angular_vel(geometry_msgs::Pose dest);
     std::pair<bool, float> detect_obstacle(float v, float w, float clearance);
-    void driveGoal();
+    void driveTo(geometry_msgs::Pose dest);
     void drive(float lin_x, float lin_y, float lin_z, float ang_x, float ang_y, float ang_z);
 
   private:
-    void cobot_laser_cb(const sensor_msgs::LaserScan& laser_scan);
+    void robot_laser_cb(const sensor_msgs::LaserScan& laser_scan);
   private:
     const ros::NodeHandle &n;
-    geometry_msgs::Pose goal;
     ros::Publisher cmd_vel_pub;
-    ros::Subscriber cobot_laser_sub;
+    ros::Subscriber robot_laser_sub;
     std::vector<geometry_msgs::Point32> obstacles;
   };
 }

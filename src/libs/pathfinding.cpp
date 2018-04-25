@@ -1,11 +1,11 @@
 #include "pathfinding.h"
 #include "util.h"
 
-followlib::PathFinding::PathFinding(ros::NodeHandle &_n, geometry_msgs::Pose _goal):
+followlib::PathFinding::PathFinding(ros::NodeHandle &_n):
   n(_n){
-    goal = _goal;
-    cobot_laser_sub = _n.subscribe(LASER_SCAN_TOPIC, 4, &PathFinding::cobot_laser_cb, this);
+    robot_laser_sub = _n.subscribe(LASER_SCAN_TOPIC, 4, &PathFinding::robot_laser_cb, this);
     cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
+    //cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
 }
 
 float followlib::PathFinding::get_linear_vel(float dist){
@@ -16,8 +16,8 @@ float followlib::PathFinding::get_linear_vel(float dist){
   return vel;
 }
 
-float followlib::PathFinding::get_angular_vel(){
-  float vel = ANG_CONS*(atan2(goal.position.y, goal.position.x));
+float followlib::PathFinding::get_angular_vel(geometry_msgs::Pose dest){
+  float vel = ANG_CONS*(atan2(dest.position.y, dest.position.x));
   //May need to check if desired velocity is even achievable given maximum acceleration
   if(std::abs(vel) > MAX_ANG_VEL){
     vel = MAX_ANG_VEL;
@@ -25,7 +25,7 @@ float followlib::PathFinding::get_angular_vel(){
   return vel;
 }
 
-void followlib::PathFinding::cobot_laser_cb(const sensor_msgs::LaserScan& laser_scan) {
+void followlib::PathFinding::robot_laser_cb(const sensor_msgs::LaserScan& laser_scan) {
   float curr_angle = laser_scan.angle_min;
   std::vector<geometry_msgs::Point32> points;
   for(unsigned int i = 0; i < laser_scan.ranges.size(); ++i ){
@@ -100,20 +100,18 @@ std::pair<bool, float> followlib::PathFinding::detect_obstacle(float v, float w,
   //if shortest_fpl = nan, then there is no obstacles
   //if shortest_fpl is > some threshold, then no obstacle
   std::pair<bool, float> ret;
-  ret.second = shortest_fpl; //should check to see how nan plays with this..
+  ret.second = shortest_fpl;
   if(std::isnan(shortest_fpl)){
     ret.first = false;
-  }/* else if(shortest_fpl > clearance){
-    ret.first = false;
-  } */ else {
+  } else {
     ret.first = true;
   }
   return ret;
 }
 
-void followlib::PathFinding::driveGoal(){
+void followlib::PathFinding::driveTo(geometry_msgs::Pose dest){
   ros::Rate loop_rate(30);
-  float dist = util::norm(-goal.position.x, -goal.position.y, 0);
+  float dist = util::norm(-dest.position.x, -dest.position.y, 0);
   //Advance towards goal until epsilon distance away
   float best_lin_x;
   float best_ang_z;
@@ -123,15 +121,13 @@ void followlib::PathFinding::driveGoal(){
     float lin_z = 0;
     float ang_x = 0;
     float ang_y = 0;
-    float ang_z = get_angular_vel();
+    float ang_z = get_angular_vel(dest);
     best_lin_x = lin_x;
     best_ang_z = ang_z;
     std::pair<bool, float> detect_result = detect_obstacle(lin_x, ang_z, MIN_CLEARANCE);
     if(detect_result.first){
       //Obstacle in path
-      std::cout << "Detected obstacle" << std::endl;
       float best_fpl = detect_result.second;
-      std::cout << "Best FPL is " << best_fpl << std::endl;
       float delta_ang_vel = delta_theta * MAX_ANG_ACCEL;
       float delta_lin_vel = delta_theta * MAX_LIN_ACCEL;
       //rough estimate of permissable change in ang_vel
@@ -147,51 +143,44 @@ void followlib::PathFinding::driveGoal(){
           if(test_ang_z > MAX_ANG_VEL){
             test_ang_z = MAX_ANG_VEL;
           }
-          //if(test_lin_x == lin_x && test_ang_z == ang_z){
-          //  continue;
-          //}
           detect_result = detect_obstacle(test_lin_x, test_ang_z, best_fpl - .1); //allow some leeway
-          std::cout << "Trying lin " << test_lin_x << std::endl;
-          std::cout << "Trying ang " << test_ang_z << std::endl;
-          std::cout << "FPL: " << detect_result.second << std::endl;
-          //if(!detect_result.first){
-            //For now, pick direction with best FPL. May need to revisit this
-            if(std::isnan(detect_result.second)){
-              std::cout << "Found Best (NAN)" << std::endl;
-              best_lin_x = test_lin_x;
-              best_ang_z = test_ang_z;
-              best_fpl = detect_result.second;
-              break; //can't beat an obstacle free path
-            } else if(detect_result.second > best_fpl){
-              std::cout << "New Best Orig was : " << best_fpl << " " <<std::endl;
-              best_lin_x = test_lin_x;
-              best_ang_z = test_ang_z;
-              best_fpl = detect_result.second;
-            }
+          //For now, pick direction with best FPL. May need to revisit this
+          if(std::isnan(detect_result.second)){
+            best_lin_x = test_lin_x;
+            best_ang_z = test_ang_z;
+            best_fpl = detect_result.second;
+            break; //can't beat an obstacle free path
+          } else if(detect_result.second > best_fpl){
+            best_lin_x = test_lin_x;
+            best_ang_z = test_ang_z;
+            best_fpl = detect_result.second;
           }
-        //}
+        }
       }
     }
     //if obstacle, poll different directions (v,w) and get best
-    std::cout << "Best: " << best_lin_x << " " << best_ang_z <<std::endl;
     drive(best_lin_x, lin_y, lin_z, ang_x, ang_y, best_ang_z);
     loop_rate.sleep();
-    float dist = util::norm(-goal.position.x, -goal.position.y, 0);
+    float dist = util::norm(-dest.position.x, -dest.position.y, 0);
   }
   drive(0,0,0,0,0,0); //stop
 }
 void followlib::PathFinding::drive(float lin_x, float lin_y, float lin_z, float ang_x, float ang_y, float ang_z){
-  /*geometry_msgs::Twist cmd_vel;
-  cmd_vel.linear.x = lin_x;
-  cmd_vel.linear.y = lin_y;
-  cmd_vel.linear.x = lin_z;
-  cmd_vel.angular.x = ang_x;
-  cmd_vel.angular.y = ang_y;
-  cmd_vel.angular.z = ang_z;*/
   cobot_msgs::CobotDriveMsg cm;
   cm.v = lin_x;
   cm.w = ang_z;
+  /*geometry_msgs::Twist tm;
+  geometry_msgs::Vector3 lin;
+  lin.x = lin_x;
+  lin.y = 0;
+  lin.z = 0;
+  geometry_msgs::Vector3 ang;
+  ang.z = 0;
+  ang.y = 0;
+  ang.z = ang_z;
+  tm.linear = lin;
+  tm.angular = ang;
+  cmd_vel_pub.publish(tm);*/
   cmd_vel_pub.publish(cm);
-  //cmd_vel_pub.publish(cmd_vel);
   ros::spinOnce();
 }
