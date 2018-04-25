@@ -25,15 +25,10 @@ void followlib::PathFinding::moveGoal(Eigen::Vector2d goal){
   //calculate angular velocity
   cobot_msgs::CobotDriveMsg vw;
   double w;
-  if(angle == 0)
+  if(angle <= theta_thresh)
     w = 0;
-  else{
-    w = (angle - 0.5*W_MAX*T) / T;
-
-    if(w>= W_MAX)
-      w = W_MAX;
-  }
-
+  else
+    w = W_MAX;
 
   vw.v = v;
   vw.w = w * turn;
