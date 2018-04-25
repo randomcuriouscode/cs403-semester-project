@@ -49,4 +49,7 @@ TARGET_LINK_LIBRARIES(test/test_example ${libs} ${usrlibs} ${otherlibs})
 rosbuild_add_gtest(test/test_kinectmapper test/test_kinectmapper.cpp)
 TARGET_LINK_LIBRARIES(test/test_kinectmapper ${libs} ${usrlibs} ${otherlibs})
 
+rosbuild_add_gtest(test/test_pathfinding test/test_pathfinding.cpp)
+TARGET_LINK_LIBRARIES(test/test_pathfinding ${libs} ${usrlibs} ${otherlibs})
+
 ROSBUILD_LINK_BOOST(followbot system)
