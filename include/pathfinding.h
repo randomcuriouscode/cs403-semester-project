@@ -31,7 +31,7 @@ namespace followlib
     /*
       move to finalLocation
     */
-    void moveGoal(Eigen::Vector2d goal);
+    void moveGoal(Eigen::Vector2d goal) const;
 
   };
 }

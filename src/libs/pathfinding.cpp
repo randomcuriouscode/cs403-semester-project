@@ -7,7 +7,7 @@ followlib::PathFinding::PathFinding(double d, double t, ros::NodeHandle &n){
   cmd_vel_pub = nh.advertise<cobot_msgs::CobotDriveMsg>("/Cobot/Drive", 1);
 }
 
-void followlib::PathFinding::moveGoal(Eigen::Vector2d goal){
+void followlib::PathFinding::moveGoal(Eigen::Vector2d goal) const{
   Eigen::Vector2d initLocation(0,0);
   Eigen::Vector2d oX(1,0);
   Eigen::Vector2d oG(goal.x(),goal.y());

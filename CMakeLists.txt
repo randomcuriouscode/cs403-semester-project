@@ -34,8 +34,8 @@ ROSBUILD_GENSRV()
 SET(libs roslib roscpp)
 
 add_library(kinect_mapper src/libs/kinect_mapper.cpp)
-add_library(pathfinding src/libs/kinect_mapper.cpp)
-add_library(tracking src/libs/pathfinding.cpp)
+add_library(pathfinding src/libs/pathfinding.cpp)
+add_library(tracking src/libs/tracking.cpp)
 
 SET(usrlibs kinect_mapper pathfinding tracking)
 SET(otherlibs yaml-cpp)
@@ -51,5 +51,8 @@ TARGET_LINK_LIBRARIES(test/test_kinectmapper ${libs} ${usrlibs} ${otherlibs})
 
 rosbuild_add_gtest(test/test_pathfinding test/test_pathfinding.cpp)
 TARGET_LINK_LIBRARIES(test/test_pathfinding ${libs} ${usrlibs} ${otherlibs})
+
+rosbuild_add_gtest(test/test_persontrack test/test_persontrack.cpp)
+TARGET_LINK_LIBRARIES(test/test_persontrack ${libs} ${usrlibs} ${otherlibs})
 
 ROSBUILD_LINK_BOOST(followbot system)

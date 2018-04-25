@@ -1,0 +1,1 @@
+roslaunch spencer_people_tracking_launch tracking_single_rgbd_sensor.launch height_above_ground:=1.6 use_openni1:=true
