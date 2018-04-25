@@ -21,7 +21,7 @@ namespace followlib
 			float maxAngularV = 1.5;	//rad/s	
 			float maxAF = 0.5;
 			float maxAA = 2.0;
-			float obstacleRange = .5;	//range when we start to avoid obstacle
+			float obstacleRange = 1.5;	//range when we start to avoid obstacle
 			float trackingRange = 2;		//follow distance
 			float goalX;		
 			float goalY;

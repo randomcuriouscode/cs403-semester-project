@@ -53,18 +53,23 @@ float followlib::PathFinder::distanceToPoint(float fv, float av, float x, float 
 		return dist;
 }
 
-float score(float v, float w, float dist){
-	float a = 100;
-	float b = -10;
-	float c = 1;
-	return a*v + b*w + c*dist;
+float score(float v, float w, float dist, float goal, float tracking){
+	float a = 1;		//forward veloctiy 
+	float b = 1;		//angular
+	float c = 10;		//free path
+	float d = 10;		// distance to goal
+	float s = a*v + b*abs(w) + c*dist;
+	//float score = a*v + b*abs(w) + c*dist + 
+	return s;
 }
 
-float score2(float v, float w, float dist){
-	float a = 1;
-	float b = -1;
-	float c = 10;
-	return a*v + b*w + c*dist;
+float score2(float v, float w, float dist, float obstacle){
+	float a = 1;		//forward veloctiy 
+	float b = 1;		//angular
+	float c = 10;		//free path
+	float d = 10;		// distance to obstacle
+	float s = a*v + b*abs(w) + c*dist;
+	return s;
 }
 
 void followlib::PathFinder::checkCurrPath(){
@@ -131,11 +136,23 @@ void followlib::PathFinder::checkCurrPath(){
 				}
 			}
 
+			if(minDist == -1){
+				if(av == 0){
+					minDist = 4;
+				}
+				else{
+					minDist = 2*3.14159265*fv/av / 4;
+					if(minDist > 4){
+						minDist = 4;
+					}
+				}
+			}
+
 			
 
 			if(minDist > obstacleRange){
 				obstaclesInRange = false;
-				currScore = score(fv, av, minDist);
+				currScore = score(fv, av, minDist, distanceToPoint(fv, av, goalX, goalY),trackingRange);
 				if(bestScore == -1 || currScore > bestScore){
 					bestScore = currScore;
 					bestFV = fv;
@@ -143,7 +160,7 @@ void followlib::PathFinder::checkCurrPath(){
 				}
 			}
 			else if(obstaclesInRange){
-				currScore = score2(fv, av, minDist);
+				currScore = score2(fv, av, minDist, distanceToPoint(fv, av, obstacles[index].x, obstacles[index].y));
 				if(bestScore2 == -1 || currScore > bestScore2){
 					bestScore2 = currScore;
 					bestFV = fv;
