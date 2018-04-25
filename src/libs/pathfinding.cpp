@@ -4,8 +4,8 @@
 followlib::PathFinding::PathFinding(ros::NodeHandle &_n):
   n(_n){
     robot_laser_sub = _n.subscribe(LASER_SCAN_TOPIC, 4, &PathFinding::robot_laser_cb, this);
-    cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
-    //cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
+    //cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
+    cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
 }
 
 float followlib::PathFinding::get_linear_vel(float dist){
@@ -166,10 +166,10 @@ void followlib::PathFinding::driveTo(geometry_msgs::Pose dest){
   drive(0,0,0,0,0,0); //stop
 }
 void followlib::PathFinding::drive(float lin_x, float lin_y, float lin_z, float ang_x, float ang_y, float ang_z){
-  cobot_msgs::CobotDriveMsg cm;
+  /*cobot_msgs::CobotDriveMsg cm;
   cm.v = lin_x;
-  cm.w = ang_z;
-  /*geometry_msgs::Twist tm;
+  cm.w = ang_z;*/
+  geometry_msgs::Twist tm;
   geometry_msgs::Vector3 lin;
   lin.x = lin_x;
   lin.y = 0;
@@ -180,7 +180,7 @@ void followlib::PathFinding::drive(float lin_x, float lin_y, float lin_z, float 
   ang.z = ang_z;
   tm.linear = lin;
   tm.angular = ang;
-  cmd_vel_pub.publish(tm);*/
-  cmd_vel_pub.publish(cm);
+  cmd_vel_pub.publish(tm);
+  //cmd_vel_pub.publish(cm);
   ros::spinOnce();
 }

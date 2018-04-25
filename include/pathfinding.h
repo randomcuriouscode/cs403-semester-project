@@ -18,10 +18,10 @@
 //cobot move2goal implementation
 //Constants
 //const std::string POSE_TOPIC = "/turtle1/pose";
-const std::string LASER_SCAN_TOPIC = "/Cobot/Laser";
-//const std::string LASER_SCAN_TOPIC = "/COMPSCI403/LaserScan";
-const std::string CMD_VEL_TOPIC = "/Cobot/Drive";
-//const std::string CMD_VEL_TOPIC = "/cmd_vel_mux/input/navi";
+//const std::string LASER_SCAN_TOPIC = "/Cobot/Laser";
+const std::string LASER_SCAN_TOPIC = "/COMPSCI403/LaserScan";
+//const std::string CMD_VEL_TOPIC = "/Cobot/Drive";
+const std::string CMD_VEL_TOPIC = "/cmd_vel_mux/input/navi";
 const float DISTANCE_EPS = .01; //epsilon for distance
 const float LIN_CONS = 1.5; // linear vel constant
 const float ANG_CONS = 6; //angular vel constant
