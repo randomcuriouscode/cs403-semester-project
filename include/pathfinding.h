@@ -1,26 +1,24 @@
 #pragma once
 
-#include <geometry_msgs/Twist.h>
-#include <turtlesim/Pose.h>
 #include <math.h>
+#include <eigen3/Eigen/Dense>
 
+#include "cobot_msgs/CobotDriveMsg.h"
 #include "follow_core.h"
 /*
   All function and class declarations pertaining to pathfinding goes here.
   All names declared in the namespace must be unique.
 */
-
-
+double W_MAX = 0.5;
+double T = 0.03333;
 namespace followlib
 {
   // all code goes here
   class PathFinding{
   private:
-    turtlesim::Pose initLocation;
-    turtlesim::Pose finalLocation;
-    double distance_tolerance;
+    double dist_thresh;
+    double theta_thresh;
     ros::Publisher cmd_vel_pub;
-    ros::Subscriber pose_sub;
     ros::NodeHandle nh;
 
   public:
@@ -28,20 +26,12 @@ namespace followlib
       goal: final location to reach
       n: NodeHandle
     */
-    PathFinding(turtlesim::Pose goal, double d, ros::NodeHandle &n);
-    /*
-      helper function fo get distance between 2 points
-    */
-    double getDistance(double x1, double y1, double x2,double y2);
+    PathFinding(double d, double t, ros::NodeHandle &n);
 
     /*
       move to finalLocation
     */
-    void moveGoal();
+    void moveGoal(Eigen::Vector2d goal);
 
-    /*
-      get current location of the turtleBot
-    */
-    void poseCallBack(const turtlesim::Pose &p_msg);
   };
 }

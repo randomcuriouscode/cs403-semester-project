@@ -1,47 +1,41 @@
 #include "pathfinding.h"
 
-followlib::PathFinding::PathFinding(turtlesim::Pose goal, double d, ros::NodeHandle &n){
-  finalLocation = goal;
+followlib::PathFinding::PathFinding(double d, double t, ros::NodeHandle &n){
   nh = n;
-  distance_tolerance = d;
-  cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10,this);
-  pose_sub = n.subscribe("/turtle1/pose", 1000, &PathFinding::poseCallBack,this);
-
-}
-void followlib::PathFinding::poseCallBack(const turtlesim::Pose &p_msg){
-  initLocation.x = p_msg.x;
-  initLocation.y = p_msg.y;
-  initLocation.theta = p_msg.theta;
+  dist_thresh = d;
+  theta_thresh = t;
+  cmd_vel_pub = nh.advertise<cobot_msgs::CobotDriveMsg>("/Cobot/Drive", 1);
 }
 
-double followlib::PathFinding::getDistance(double x1, double y1, double x2,double y2){
-  return sqrt(pow((x1-x2),2) + pow((y1-y2),2));
-}
-
-void followlib::PathFinding::moveGoal(){
-  geometry_msgs::Twist vel_msg;
-
-  ros::Rate loop_rate(10);
-
-  do{
-    vel_msg.linear.x = 0.2*getDistance(initLocation.x,initLocation.y,finalLocation.x,finalLocation.y);
-    vel_msg.linear.y = 0;
-    vel_msg.linear.z = 0;
-
-    vel_msg.angular.x = 0;
-    vel_msg.angular.y = 0;
-    vel_msg.angular.z = 4*(atan2(finalLocation.y-initLocation.y,finalLocation.x-initLocation.x) - initLocation.theta);
-
-    cmd_vel_pub.publish(vel_msg);
-
-    ros::spinOnce();
-    loop_rate.sleep();
+void followlib::PathFinding::moveGoal(Eigen::Vector2d goal){
+  Eigen::Vector2d initLocation(0,0);
+  Eigen::Vector2d oX(1,0);
+  Eigen::Vector2d oG(goal.x(),goal.y());
+  int turn = 1;
+  if(goal.y() < 0){
+    turn = -1;
   }
-  while(getDistance(initLocation.x,initLocation.y,finalLocation.x,finalLocation.y) >= distance_tolerance);
+  double mul = oX.x()*oG.x() + oX.y()*oG.y();
+  double angle = acos(mul/(oX.norm()*oG.norm()));
+  //calculate linear velocity
+  double v = 0.2;
+  if(sqrt(goal.x()*goal.x() + goal.y()*goal.y()) <= dist_thresh)
+    v = 0;
 
-  vel_msg.linear.x = 0;
-  vel_msg.angular.z = 0;
+  //calculate angular velocity
+  cobot_msgs::CobotDriveMsg vw;
+  double w;
+  if(angle == 0)
+    w = 0;
+  else{
+    w = (angle - 0.5*W_MAX*T) / T;
 
-  cmd_vel_pub.publish(vel_msg);
+    if(w>= W_MAX)
+      w = W_MAX;
+  }
 
+
+  vw.v = v;
+  vw.w = w;
+  cmd_vel_pub.publish(vw);
 }
