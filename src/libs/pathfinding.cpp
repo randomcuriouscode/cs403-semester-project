@@ -36,6 +36,6 @@ void followlib::PathFinding::moveGoal(Eigen::Vector2d goal){
 
 
   vw.v = v;
-  vw.w = w;
+  vw.w = w * turn;
   cmd_vel_pub.publish(vw);
 }
