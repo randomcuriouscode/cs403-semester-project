@@ -9,7 +9,7 @@
   All function and class declarations pertaining to pathfinding goes here.
   All names declared in the namespace must be unique.
 */
-double W_MAX = 0.5;
+double W_MAX = 0.1;
 double T = 0.03333;
 namespace followlib
 {
