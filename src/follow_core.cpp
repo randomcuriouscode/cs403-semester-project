@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
   // stuff goes here
   geometry_msgs::Pose dest;
   dest.position.x = 1;
-  dest.position.y = 1;
+  dest.position.y = 0;
   dest.position.z = 0;
   PeopleTracker pt(n, &PTrackCallback);
   PathFinding pf = PathFinding(n, dest); //cobot will spin in circles (which makes sense because goal isn't updated periodically)

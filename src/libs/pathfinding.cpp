@@ -4,7 +4,7 @@
 followlib::PathFinding::PathFinding(ros::NodeHandle &_n, geometry_msgs::Pose _goal):
   n(_n){
     goal = _goal;
-    cobot_laser_sub = n.subscribe(LASER_SCAN_TOPIC, 1000, cobot_laser_cb);
+    cobot_laser_sub = _n.subscribe(LASER_SCAN_TOPIC, 4, &PathFinding::cobot_laser_cb, this);
     cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
 }
 
@@ -61,7 +61,7 @@ void followlib::PathFinding::cobot_laser_cb(const sensor_msgs::LaserScan& laser_
   obstacles = points;
 }
 
-std::pair<bool, float> followlib::PathFinding::detect_obstacle(float v, float w){
+std::pair<bool, float> followlib::PathFinding::detect_obstacle(float v, float w, float clearance){
   //Check laserscan & see if obstacles in desired path
   float shortest_fpl = nan("");
   for(std::vector<geometry_msgs::Point32>::iterator it = obstacles.begin(); it!=obstacles.end(); ++it){
@@ -88,6 +88,7 @@ std::pair<bool, float> followlib::PathFinding::detect_obstacle(float v, float w)
         fpl = lco * r;
       }
     }
+    //if nan fpl, then no obst
     if(!std::isnan(fpl)){
       if(std::isnan(shortest_fpl)){
 	       shortest_fpl = fpl;
@@ -102,9 +103,9 @@ std::pair<bool, float> followlib::PathFinding::detect_obstacle(float v, float w)
   ret.second = shortest_fpl; //should check to see how nan plays with this..
   if(std::isnan(shortest_fpl)){
     ret.first = false;
-  } else if(shortest_fpl > MIN_CLEARANCE){
+  }/* else if(shortest_fpl > clearance){
     ret.first = false;
-  } else {
+  } */ else {
     ret.first = true;
   }
   return ret;
@@ -114,6 +115,8 @@ void followlib::PathFinding::driveGoal(){
   ros::Rate loop_rate(30);
   float dist = util::norm(-goal.position.x, -goal.position.y, 0);
   //Advance towards goal until epsilon distance away
+  float best_lin_x;
+  float best_ang_z;
   while(dist>DISTANCE_EPS){
     float lin_x = get_linear_vel(dist);
     float lin_y = 0;
@@ -121,32 +124,57 @@ void followlib::PathFinding::driveGoal(){
     float ang_x = 0;
     float ang_y = 0;
     float ang_z = get_angular_vel();
-    std::pair<bool, float> detect_result = detect_obstacle(lin_x, ang_z);
+    best_lin_x = lin_x;
+    best_ang_z = ang_z;
+    std::pair<bool, float> detect_result = detect_obstacle(lin_x, ang_z, MIN_CLEARANCE);
     if(detect_result.first){
       //Obstacle in path
-      float best_ang_z = ang_z;
+      std::cout << "Detected obstacle" << std::endl;
       float best_fpl = detect_result.second;
-      float delta_ang_vel = delta_theta * MAX_ANG_ACCEL * -1;
+      std::cout << "Best FPL is " << best_fpl << std::endl;
+      float delta_ang_vel = delta_theta * MAX_ANG_ACCEL;
+      float delta_lin_vel = delta_theta * MAX_LIN_ACCEL;
       //rough estimate of permissable change in ang_vel
-      for(int i = 0; i < 10; ++i){
-        //ang_z constrained by how far we can actually accel within a time stamp
-        float test_ang_z = delta_ang_vel+((float)(i+1)*.1)+ang_z;
-        detect_result = detect_obstacle(lin_x, test_ang_z);
-        if(!detect_result.first){
-          //For now, pick direction with best FPL. May need to revisit this
-          if(std::isnan(detect_result.second)){
-            best_ang_z = test_ang_z;
-            best_fpl = detect_result.second;
-            break; //can't beat an obstacle free path
-          } else if(detect_result.second > best_fpl){
-            best_ang_z = test_ang_z;
-            best_fpl = detect_result.second;
-          }
+      for(int i = 0; i < 6; ++i){
+        //bounded by +- delta_lin_vel or delta_ang_vel
+        float test_lin_x = ((float)(i)*(2*delta_lin_vel/5))+(lin_x - delta_lin_vel);
+        if(test_lin_x > MAX_LIN_VEL){
+          test_lin_x = MAX_LIN_VEL;
         }
+        for(int j = 0; j < 6; ++j){
+          //ang_z constrained by how far we can actually accel within a time stamp
+          float test_ang_z = ((float)(j)*(2*delta_ang_vel/5))+(ang_z - delta_ang_vel);
+          if(test_ang_z > MAX_ANG_VEL){
+            test_ang_z = MAX_ANG_VEL;
+          }
+          //if(test_lin_x == lin_x && test_ang_z == ang_z){
+          //  continue;
+          //}
+          detect_result = detect_obstacle(test_lin_x, test_ang_z, best_fpl - .1); //allow some leeway
+          std::cout << "Trying lin " << test_lin_x << std::endl;
+          std::cout << "Trying ang " << test_ang_z << std::endl;
+          std::cout << "FPL: " << detect_result.second << std::endl;
+          //if(!detect_result.first){
+            //For now, pick direction with best FPL. May need to revisit this
+            if(std::isnan(detect_result.second)){
+              std::cout << "Found Best (NAN)" << std::endl;
+              best_lin_x = test_lin_x;
+              best_ang_z = test_ang_z;
+              best_fpl = detect_result.second;
+              break; //can't beat an obstacle free path
+            } else if(detect_result.second > best_fpl){
+              std::cout << "New Best Orig was : " << best_fpl << " " <<std::endl;
+              best_lin_x = test_lin_x;
+              best_ang_z = test_ang_z;
+              best_fpl = detect_result.second;
+            }
+          }
+        //}
       }
     }
     //if obstacle, poll different directions (v,w) and get best
-    drive(lin_x, lin_y, lin_z, ang_x, ang_y, ang_z);
+    std::cout << "Best: " << best_lin_x << " " << best_ang_z <<std::endl;
+    drive(best_lin_x, lin_y, lin_z, ang_x, ang_y, best_ang_z);
     loop_rate.sleep();
     float dist = util::norm(-goal.position.x, -goal.position.y, 0);
   }
