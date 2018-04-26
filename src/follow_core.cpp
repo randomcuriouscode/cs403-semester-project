@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
   // stuff goes here
 
   PathFinding pathfinder(dist_thresh, theta_thresh, n);
-  std::function<void(Eigen::Vector2d)> ptCb = [pathfinder](Eigen::Vector2d pt)->void{
+  PTCallback ptCb = [pathfinder](Eigen::Vector2d pt)->void{
     ROS_DEBUG_STREAM_NAMED(LOGGER_NAME, 
       "PTrackCallback: Got (" << 
       pt.x() << "," << pt.y() << ")");

@@ -3,7 +3,6 @@
 #include <math.h>
 #include <eigen3/Eigen/Dense>
 
-#include "cobot_msgs/CobotDriveMsg.h"
 #include "follow_core.h"
 /*
   All function and class declarations pertaining to pathfinding goes here.
