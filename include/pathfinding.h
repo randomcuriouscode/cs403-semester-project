@@ -1,15 +1,19 @@
 #pragma once
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point32.h>
 #include <sensor_msgs/LaserScan.h>
-#include <turtlesim/Pose.h>
 #include <math.h>
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Eigenvalues>
+
+#define DEBUG
+
+#ifdef DEBUG
 #include "cobot_msgs/CobotDriveMsg.h"
+#else
+#include <geometry_msgs/Twist.h>
+#endif
 /*
   All function and class declarations pertaining to pathfinding goes here.
   All names declared in the namespace must be unique.
@@ -17,10 +21,14 @@
 double W_MAX = 0.1;
 
 //Constants
+
+#ifdef DEBUG
 const std::string LASER_SCAN_TOPIC = "/Cobot/Laser";
-//const std::string LASER_SCAN_TOPIC = "/COMPSCI403/LaserScan"; //Kinect Mapper?
 const std::string CMD_VEL_TOPIC = "/Cobot/Drive";
-//const std::string CMD_VEL_TOPIC = "/cmd_vel_mux/input/navi";
+#else
+const std::string LASER_SCAN_TOPIC = "/COMPSCI403/LaserScan";
+const std::string CMD_VEL_TOPIC = "/cmd_vel_mux/input/navi";
+#endif
 const double DISTANCE_EPS = .9; //distance permissable from tracked person
 const double LIN_CONS = 1.5; // linear vel constant
 const double ANG_CONS = 6; //angular vel constant

@@ -4,8 +4,11 @@
 followlib::PathFinding::PathFinding(ros::NodeHandle &_n, double d_thresh, double t_thresh):
   n(_n){
     robot_laser_sub = _n.subscribe(LASER_SCAN_TOPIC, 4, &PathFinding::robot_laser_cb, this);
+  #ifdef DEBUG
     cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
-    //cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
+  #else
+    cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
+  #endif
     dist_thresh = d_thresh;
     theta_thresh = t_thresh;
 }
@@ -220,10 +223,13 @@ void followlib::PathFinding::moveGoal(Eigen::Vector2d dest) const{
   drive(0,0,0,0,0,0); //stop
 }
 void followlib::PathFinding::drive(double lin_x, double lin_y, double lin_z, double ang_x, double ang_y, double ang_z) const{
+#ifdef DEBUG
   cobot_msgs::CobotDriveMsg cm;
   cm.v = lin_x;
   cm.w = ang_z;
-  /*geometry_msgs::Twist tm;
+  cmd_vel_pub.publish(cm);
+#else
+  geometry_msgs::Twist tm;
   geometry_msgs::Vector3 lin;
   lin.x = lin_x;
   lin.y = 0;
@@ -234,7 +240,7 @@ void followlib::PathFinding::drive(double lin_x, double lin_y, double lin_z, dou
   ang.z = ang_z;
   tm.linear = lin;
   tm.angular = ang;
-  cmd_vel_pub.publish(tm);*/
-  cmd_vel_pub.publish(cm);
+  cmd_vel_pub.publish(tm);
+#endif
   ros::spinOnce();
 }
