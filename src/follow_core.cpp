@@ -48,14 +48,16 @@ int main(int argc, char **argv) {
 
   // stuff goes here
 
-  PathFinding pathfinder(dist_thresh, theta_thresh, n);
-  PTCallback ptCb = [pathfinder](Eigen::Vector2d pt)->void{
+  PathFinding pathfinder(n, dist_thresh, theta_thresh);
+  Eigen::Vector2d ptTest (1, 0);
+  pathfinder.moveGoal(ptTest);
+  /*PTCallback ptCb = [pathfinder](Eigen::Vector2d pt)->void{
     ROS_DEBUG_STREAM_NAMED(LOGGER_NAME,
       "PTrackCallback: Got (" <<
       pt.x() << "," << pt.y() << ")");
     pathfinder.moveGoal(pt);
-  };
-  PeopleTracker pt(n, ptCb);
+  };*/
+  //PeopleTracker pt(n, ptCb);
 
   ros::spin();
 

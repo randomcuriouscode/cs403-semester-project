@@ -1,16 +1,16 @@
 #include "pathfinding.h"
 #include "util.h"
 
-followlib::PathFinding::PathFinding(ros::NodeHandle &_n, double d, double t):
+followlib::PathFinding::PathFinding(ros::NodeHandle &_n, double d_thresh, double t_thresh):
   n(_n){
-    dist_thresh = d;
-    theta_thresh = t;
     robot_laser_sub = _n.subscribe(LASER_SCAN_TOPIC, 4, &PathFinding::robot_laser_cb, this);
     cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
     //cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
+    dist_thresh = d_thresh;
+    theta_thresh = t_thresh;
 }
 
-double followlib::PathFinding::get_linear_vel(double dist){
+double followlib::PathFinding::get_linear_vel(double dist) const{
   double vel = LIN_CONS*dist;
   if(std::abs(vel) > MAX_LIN_VEL){
     vel = MAX_LIN_VEL;
@@ -18,7 +18,7 @@ double followlib::PathFinding::get_linear_vel(double dist){
   return vel;
 }
 
-double followlib::PathFinding::get_angular_vel(Eigen::Vector2d dest){
+double followlib::PathFinding::get_angular_vel(Eigen::Vector2d dest) const{
   double vel = ANG_CONS*(atan2(dest.y(), dest.x()));
   //May need to check if desired velocity is even achievable given maximum acceleration
   if(std::abs(vel) > MAX_ANG_VEL){
@@ -63,22 +63,22 @@ void followlib::PathFinding::robot_laser_cb(const sensor_msgs::LaserScan& laser_
   obstacles = points;
 }
 
-std::pair<bool, double> followlib::PathFinding::detect_obstacle(double v, double w, double clearance){
+std::pair<bool, double> followlib::PathFinding::detect_obstacle(double v, double w, double clearance) const{
   //Check laserscan & see if obstacles in desired path
   double shortest_fpl = nan("");
-  for(std::vector<geometry_msgs::Point32>::iterator it = obstacles.begin(); it!=obstacles.end(); ++it){
+  for(std::vector<geometry_msgs::Point32>::const_iterator it = obstacles.begin(); it!=obstacles.end(); ++it){
     //compute fpl for each obstacle and v,w
     geometry_msgs::Point32 P = *it;
     double fpl = nan("");
     Eigen::Vector2f p (P.x, P.y);
     if(w == 0){
-      if (fabs(p.y()) <= ROBOT_RADIUS && std::signbit(p.x()) == std::signbit(v)){
+      if (std::abs(p.y()) <= ROBOT_RADIUS && std::signbit(p.x()) == std::signbit(v)){
         fpl = p.x() - ROBOT_RADIUS;
       }
     } else {
       Eigen::Vector2f c (0,(double) v / w);
       double r = c.norm();
-      double dist_point = fabs((c - p).norm() - r);
+      double dist_point = std::abs((c - p).norm() - r);
       if(dist_point < ROBOT_RADIUS){
         Eigen::Vector2f cp = p-c;
         Eigen::Vector2f co = -c;
@@ -116,14 +116,14 @@ std::pair<bool, double> followlib::PathFinding::detect_obstacle(double v, double
   return ret;
 }
 
-void followlib::PathFinding::driveTo(Eigen::Vector2d dest){
+void followlib::PathFinding::moveGoal(Eigen::Vector2d dest) const{
   ros::Rate loop_rate(30);
-  double dist = util::norm(dest.x(), dest.y(), 0);
+  double dist = util::norm(-dest.x(), -dest.y(), 0);
   //Advance towards goal until epsilon distance away
-  double best_lin_vel;
-  double best_ang_vel;
-  double prev_lin_vel = 0;
-  double prev_ang_vel = 0;
+  double best_lin_x;
+  double best_ang_z;
+  double prev_lin_x = 0;
+  double prev_ang_z = 0;
   while(dist>DISTANCE_EPS){
     Eigen::Vector2d initLocation(0,0);
     Eigen::Vector2d oX(1,0);
@@ -135,19 +135,17 @@ void followlib::PathFinding::driveTo(Eigen::Vector2d dest){
     double mul = oX.x()*oG.x() + oX.y()*oG.y();
     double angle = acos(mul/(oX.norm()*oG.norm()));
     //calculate linear velocity
-    double lin_vel = 0.2;
-    double ang_vel;
+    double lin_x = 0.2;
+    double ang_z;
     if(angle <= theta_thresh)
-      ang_vel = 0;
+      ang_z = 0;
     else
-      ang_vel = MAX_ANG_VEL;
-    /* Previous code for determining lin/ang vels
-    double lin_x = get_linear_vel(dist);
-    double ang_z = get_angular_vel(dest);
+      ang_z = MAX_ANG_VEL;
+    //double lin_x = get_linear_vel(dist);
+    //double ang_z = get_angular_vel(dest);
     best_lin_x = lin_x;
     best_ang_z = ang_z;
-    */
-    std::pair<bool, double> detect_result = detect_obstacle(lin_vel, ang_vel, MIN_CLEARANCE);
+    std::pair<bool, double> detect_result = detect_obstacle(lin_x, ang_z, MIN_CLEARANCE);
     if(detect_result.first){
       //Obstacle in path. Poll different directions to find a better one
       double best_cost = nan("");
@@ -159,44 +157,44 @@ void followlib::PathFinding::driveTo(Eigen::Vector2d dest){
       bool found_alt_direction = false;
       for(int i = 0; i < iterations+1; ++i){
         //bounded by +- delta_lin_vel or delta_ang_vel
-        double test_lin_vel = ((double)(i)*(2*delta_lin_vel/iterations))+(lin_vel - delta_lin_vel);
-        if(test_lin_vel > MAX_LIN_VEL){
-          test_lin_vel = MAX_LIN_VEL;
-        } else if (test_lin_vel < MAX_LIN_VEL*-1){
-          test_lin_vel = MAX_LIN_VEL*-1;
+        double test_lin_x = ((double)(i)*(2*delta_lin_vel/iterations))+(lin_x - delta_lin_vel);
+        if(test_lin_x > MAX_LIN_VEL){
+          test_lin_x = MAX_LIN_VEL;
+        } else if (test_lin_x < MAX_LIN_VEL*-1){
+          test_lin_x = MAX_LIN_VEL*-1;
         }
         for(int j = 0; j < 11; ++j){
-          //ang_vel constrained by how far we can actually accel within a time stamp
-          double test_ang_vel = ((double)(j)*(2*delta_ang_vel/iterations))+(ang_vel - delta_ang_vel);
-          if(test_ang_vel > MAX_ANG_VEL){
-            test_ang_vel = MAX_ANG_VEL;
-          } else if (test_ang_vel < MAX_ANG_VEL*-1){
-            test_ang_vel = MAX_ANG_VEL*-1;
+          //ang_z constrained by how far we can actually accel within a time stamp
+          double test_ang_z = ((double)(j)*(2*delta_ang_vel/iterations))+(ang_z - delta_ang_vel);
+          if(test_ang_z > MAX_ANG_VEL){
+            test_ang_z = MAX_ANG_VEL;
+          } else if (test_ang_z < MAX_ANG_VEL*-1){
+            test_ang_z = MAX_ANG_VEL*-1;
           }
-          detect_result = detect_obstacle(test_lin_vel, test_ang_vel, MIN_CLEARANCE); // maybe
+          detect_result = detect_obstacle(test_lin_x, test_ang_z, MIN_CLEARANCE); // maybe
           //compute stopping distance
           double vCriticalSq = nan("");
           if(!std::isnan(detect_result.second)) {
             vCriticalSq = (double)(2*MAX_LIN_ACCEL*detect_result.second);
           }
-          double deltaTheta = std::abs(prev_ang_vel * delta_time);
+          double deltaTheta = std::abs(prev_ang_z * delta_time);
           double wCriticalSq = (double)(2*MAX_ANG_ACCEL*deltaTheta);
-          if((std::isnan(detect_result.second)) || (((prev_lin_vel*prev_lin_vel) < vCriticalSq) && ((prev_ang_vel*prev_ang_vel) < wCriticalSq))){
+          if((std::isnan(detect_result.second)) || (((prev_lin_x*prev_lin_x) < vCriticalSq) && ((prev_ang_z*prev_ang_z) < wCriticalSq))){
             //admissable, compute cost function
             //For now, pick direction with best FPL. Replace this with a scoring function.
             if(std::isnan(detect_result.second)){
               detect_result.second = 10; //nan fpl means no obstacles. Assign it a high value for purposes of cost function
             }
-            double cost = BETA*detect_result.second + GAMMA*test_lin_vel;
+            double cost = BETA*detect_result.second + GAMMA*test_lin_x;
             if(std::isnan(best_cost)){
-              best_lin_vel = test_lin_vel;
-              best_ang_vel = test_ang_vel;
+              best_lin_x = test_lin_x;
+              best_ang_z = test_ang_z;
               best_fpl = detect_result.second;
               best_cost = cost;
               found_alt_direction = true;
             } else if(cost < best_cost){
-              best_lin_vel = test_lin_vel;
-              best_ang_vel = test_ang_vel;
+              best_lin_x = test_lin_x;
+              best_ang_z = test_ang_z;
               best_fpl = detect_result.second;
               best_cost = cost;
               found_alt_direction = true;
@@ -207,21 +205,21 @@ void followlib::PathFinding::driveTo(Eigen::Vector2d dest){
       //Couldn't find a best direction (stuck in front of obstacle)
       if(!found_alt_direction || (!std::isnan(best_fpl) && best_fpl <= .81)){
         //Need to break, robot needs time to stop
-        best_lin_vel = 0;
-        best_ang_vel = 0;
+        best_lin_x = 0;
+        best_ang_z = 0;
         break;
       }
     }
     //if obstacle, poll different directions (v,w) and get best
-    drive(best_lin_vel, 0, 0, 0, 0, best_ang_vel);
+    drive(best_lin_x, 0, 0, 0, 0, best_ang_z);
     loop_rate.sleep();
     double dist = util::norm(-dest.x(), -dest.y(), 0);
-    prev_lin_vel = best_lin_vel;
-    prev_ang_vel = best_ang_vel;
+    prev_lin_x = best_lin_x;
+    prev_ang_z = best_ang_z;
   }
   drive(0,0,0,0,0,0); //stop
 }
-void followlib::PathFinding::drive(double lin_x, double lin_y, double lin_z, double ang_x, double ang_y, double ang_z){
+void followlib::PathFinding::drive(double lin_x, double lin_y, double lin_z, double ang_x, double ang_y, double ang_z) const{
   cobot_msgs::CobotDriveMsg cm;
   cm.v = lin_x;
   cm.w = ang_z;

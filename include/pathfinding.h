@@ -32,7 +32,7 @@ const double delta_time = .0333;
 const double ROBOT_RADIUS = .18;
 const double MIN_CLEARANCE = 3;
 //Cost function
-const double ALPHA = -5;
+const double ALPHA = 5;
 const double BETA = -5;
 const double GAMMA = -5;
 namespace followlib
@@ -41,12 +41,12 @@ namespace followlib
   class PathFinding
   {
   public:
-    PathFinding(ros::NodeHandle &_n, double d, double t);
-    double get_linear_vel(double dist);
-    double get_angular_vel(Eigen::Vector2d dest);
-    std::pair<bool, double> detect_obstacle(double v, double w, double clearance);
-    void driveTo(Eigen::Vector2d dest);
-    void drive(double lin_x, double lin_y, double lin_z, double ang_x, double ang_y, double ang_z);
+    PathFinding(ros::NodeHandle &_n, double d_thresh, double t_thresh);
+    double get_linear_vel(double dist) const;
+    double get_angular_vel(Eigen::Vector2d dest) const;
+    std::pair<bool, double> detect_obstacle(double v, double w, double clearance) const;
+    void moveGoal(Eigen::Vector2d dest) const;
+    void drive(double lin_x, double lin_y, double lin_z, double ang_x, double ang_y, double ang_z) const;
   private:
     void robot_laser_cb(const sensor_msgs::LaserScan& laser_scan);
   private:
