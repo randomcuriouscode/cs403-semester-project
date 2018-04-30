@@ -14,6 +14,7 @@
   All function and class declarations pertaining to pathfinding goes here.
   All names declared in the namespace must be unique.
 */
+double W_MAX = 0.1;
 
 //Constants
 const std::string LASER_SCAN_TOPIC = "/Cobot/Laser";
