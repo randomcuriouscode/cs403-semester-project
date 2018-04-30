@@ -58,6 +58,12 @@ sudo sh uninstall.sh
 sudo sh install.sh
 cd -
 
+# depth_to_laserscan
+cd 3rd-party-libs/compsci403_assignment5_helper/
+export ROS_PACKAGE_PATH=`pwd`:$ROS_PACKAGE_PATH
+make
+cd -
+
 # Add L-Cas repo to apt
 if ! grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/* | grep -q lcas.lincoln.ac.uk; then
 	curl -s http://lcas.lincoln.ac.uk/repos/public.key | sudo apt-key add -
