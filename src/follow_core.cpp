@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 
   PathFinding pathfinder(n, dist_thresh, theta_thresh);
 #ifdef DEBUG
-  Eigen::Vector2d ptTest (1, 0);
+  Eigen::Vector2d ptTest (4, 0);
   pathfinder.moveGoal(ptTest);
 #endif
   PTCallback ptCb = [pathfinder](Eigen::Vector2d pt)->void{
