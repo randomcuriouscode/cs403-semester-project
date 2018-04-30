@@ -4,8 +4,8 @@
 followlib::PathFinding::PathFinding(ros::NodeHandle &_n):
   n(_n){
     robot_laser_sub = _n.subscribe(LASER_SCAN_TOPIC, 4, &PathFinding::robot_laser_cb, this);
-    //cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
-    cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
+    cmd_vel_pub = _n.advertise<cobot_msgs::CobotDriveMsg>(CMD_VEL_TOPIC, 10, this);
+    //cmd_vel_pub = _n.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10, this);
 }
 
 float followlib::PathFinding::get_linear_vel(float dist){
@@ -101,10 +101,15 @@ std::pair<bool, float> followlib::PathFinding::detect_obstacle(float v, float w,
   //if shortest_fpl is > some threshold, then no obstacle
   std::pair<bool, float> ret;
   ret.second = shortest_fpl;
+  //While moving towards goal, if obstacle appears & is < 1m (?) then record as obstacle. Everything else will be treated
+  //as not obstacles.
   if(std::isnan(shortest_fpl)){
     ret.first = false;
-  } else {
+  } else if(shortest_fpl <= clearance){
     ret.first = true;
+  } else {
+    //There are obstacles, but outside of clearance
+    ret.first = false;
   }
   return ret;
 }
@@ -115,61 +120,92 @@ void followlib::PathFinding::driveTo(geometry_msgs::Pose dest){
   //Advance towards goal until epsilon distance away
   float best_lin_x;
   float best_ang_z;
+  float prev_lin_x = 0;
+  float prev_ang_z = 0;
   while(dist>DISTANCE_EPS){
     float lin_x = get_linear_vel(dist);
-    float lin_y = 0;
-    float lin_z = 0;
-    float ang_x = 0;
-    float ang_y = 0;
     float ang_z = get_angular_vel(dest);
     best_lin_x = lin_x;
     best_ang_z = ang_z;
     std::pair<bool, float> detect_result = detect_obstacle(lin_x, ang_z, MIN_CLEARANCE);
     if(detect_result.first){
-      //Obstacle in path
+      //Obstacle in path. Poll different directions to find a better one
+      float best_cost = nan("");
       float best_fpl = detect_result.second;
-      float delta_ang_vel = delta_theta * MAX_ANG_ACCEL;
-      float delta_lin_vel = delta_theta * MAX_LIN_ACCEL;
+      float delta_ang_vel = delta_time * MAX_ANG_ACCEL;//v=v0+at
+      float delta_lin_vel = delta_time * MAX_LIN_ACCEL;
+      int iterations = 10;
       //rough estimate of permissable change in ang_vel
-      for(int i = 0; i < 6; ++i){
+      bool found_alt_direction = false;
+      for(int i = 0; i < iterations+1; ++i){
         //bounded by +- delta_lin_vel or delta_ang_vel
-        float test_lin_x = ((float)(i)*(2*delta_lin_vel/5))+(lin_x - delta_lin_vel);
+        float test_lin_x = ((float)(i)*(2*delta_lin_vel/iterations))+(lin_x - delta_lin_vel);
         if(test_lin_x > MAX_LIN_VEL){
           test_lin_x = MAX_LIN_VEL;
+        } else if (test_lin_x < MAX_LIN_VEL*-1){
+          test_lin_x = MAX_LIN_VEL*-1;
         }
-        for(int j = 0; j < 6; ++j){
+        for(int j = 0; j < 11; ++j){
           //ang_z constrained by how far we can actually accel within a time stamp
-          float test_ang_z = ((float)(j)*(2*delta_ang_vel/5))+(ang_z - delta_ang_vel);
+          float test_ang_z = ((float)(j)*(2*delta_ang_vel/iterations))+(ang_z - delta_ang_vel);
           if(test_ang_z > MAX_ANG_VEL){
             test_ang_z = MAX_ANG_VEL;
+          } else if (test_ang_z < MAX_ANG_VEL*-1){
+            test_ang_z = MAX_ANG_VEL*-1;
           }
-          detect_result = detect_obstacle(test_lin_x, test_ang_z, best_fpl - .1); //allow some leeway
-          //For now, pick direction with best FPL. May need to revisit this
-          if(std::isnan(detect_result.second)){
-            best_lin_x = test_lin_x;
-            best_ang_z = test_ang_z;
-            best_fpl = detect_result.second;
-            break; //can't beat an obstacle free path
-          } else if(detect_result.second > best_fpl){
-            best_lin_x = test_lin_x;
-            best_ang_z = test_ang_z;
-            best_fpl = detect_result.second;
+          detect_result = detect_obstacle(test_lin_x, test_ang_z, MIN_CLEARANCE); // maybe
+          //compute stopping distance
+          float vCriticalSq = nan("");
+          if(!std::isnan(detect_result.second)) {
+            vCriticalSq = (float)(2*MAX_LIN_ACCEL*detect_result.second);
+          }
+          float deltaTheta = std::abs(prev_ang_z * delta_time);
+          float wCriticalSq = (float)(2*MAX_ANG_ACCEL*deltaTheta);
+          if((std::isnan(detect_result.second)) || (((prev_lin_x*prev_lin_x) < vCriticalSq) && ((prev_ang_z*prev_ang_z) < wCriticalSq))){
+            //admissable, compute cost function
+            //For now, pick direction with best FPL. Replace this with a scoring function.
+            if(std::isnan(detect_result.second)){
+              detect_result.second = 10; //nan fpl means no obstacles. Assign it a high value for purposes of cost function
+            }
+            float cost = BETA*detect_result.second + GAMMA*test_lin_x;
+            if(std::isnan(best_cost)){
+              best_lin_x = test_lin_x;
+              best_ang_z = test_ang_z;
+              best_fpl = detect_result.second;
+              best_cost = cost;
+              found_alt_direction = true;
+            } else if(cost < best_cost){
+              best_lin_x = test_lin_x;
+              best_ang_z = test_ang_z;
+              best_fpl = detect_result.second;
+              best_cost = cost;
+              found_alt_direction = true;
+            }
           }
         }
       }
+      //Couldn't find a best direction (stuck in front of obstacle)
+      if(!found_alt_direction || (!std::isnan(best_fpl) && best_fpl <= .81)){
+        //Need to break, robot needs time to stop
+        best_lin_x = 0;
+        best_ang_z = 0;
+        break;
+      }
     }
     //if obstacle, poll different directions (v,w) and get best
-    drive(best_lin_x, lin_y, lin_z, ang_x, ang_y, best_ang_z);
+    drive(best_lin_x, 0, 0, 0, 0, best_ang_z);
     loop_rate.sleep();
     float dist = util::norm(-dest.position.x, -dest.position.y, 0);
+    prev_lin_x = best_lin_x;
+    prev_ang_z = best_ang_z;
   }
   drive(0,0,0,0,0,0); //stop
 }
 void followlib::PathFinding::drive(float lin_x, float lin_y, float lin_z, float ang_x, float ang_y, float ang_z){
-  /*cobot_msgs::CobotDriveMsg cm;
+  cobot_msgs::CobotDriveMsg cm;
   cm.v = lin_x;
-  cm.w = ang_z;*/
-  geometry_msgs::Twist tm;
+  cm.w = ang_z;
+  /*geometry_msgs::Twist tm;
   geometry_msgs::Vector3 lin;
   lin.x = lin_x;
   lin.y = 0;
@@ -180,7 +216,7 @@ void followlib::PathFinding::drive(float lin_x, float lin_y, float lin_z, float 
   ang.z = ang_z;
   tm.linear = lin;
   tm.angular = ang;
-  cmd_vel_pub.publish(tm);
-  //cmd_vel_pub.publish(cm);
+  cmd_vel_pub.publish(tm);*/
+  cmd_vel_pub.publish(cm);
   ros::spinOnce();
 }
