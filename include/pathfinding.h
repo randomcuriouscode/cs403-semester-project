@@ -29,11 +29,11 @@ const std::string CMD_VEL_TOPIC = "/Cobot/Drive";
 const std::string LASER_SCAN_TOPIC = "/COMPSCI403/LaserScan";
 const std::string CMD_VEL_TOPIC = "/cmd_vel_mux/input/navi";
 #endif
-const double DISTANCE_EPS = 3; //distance permissable from tracked person
+const double DISTANCE_EPS = 2; //distance permissable from tracked person
 const double LIN_CONS = 1.5; // linear vel constant
 const double ANG_CONS = 6; //angular vel constant
 const double MAX_LIN_VEL = .5;
-const double MAX_ANG_VEL = 1.5;
+const double MAX_ANG_VEL = .3;
 const double MAX_LIN_ACCEL = .5;
 const double MAX_ANG_ACCEL = 2;
 const double delta_time = .0333;

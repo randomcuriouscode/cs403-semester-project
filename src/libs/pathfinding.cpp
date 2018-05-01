@@ -150,6 +150,7 @@ void followlib::PathFinding::moveGoal(Eigen::Vector2d dest) const{
       ang_z = 0;
     else
       ang_z = MAX_ANG_VEL;
+    ang_z = ang_z*turn;
     //double lin_x = get_linear_vel(dist);
     //double ang_z = get_angular_vel(dest);
     best_lin_x = lin_x;
