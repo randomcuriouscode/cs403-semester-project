@@ -50,8 +50,10 @@ int main(int argc, char **argv) {
 
   PathFinding pathfinder(n, dist_thresh, theta_thresh);
 #ifdef DEBUG
+while(1==1){
   Eigen::Vector2d ptTest (4, 0);
   pathfinder.moveGoal(ptTest);
+}
 #endif
   PTCallback ptCb = [pathfinder](Eigen::Vector2d pt)->void{
     ROS_DEBUG_STREAM_NAMED(LOGGER_NAME,
